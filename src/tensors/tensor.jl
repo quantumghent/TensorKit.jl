@@ -474,8 +474,8 @@ blocks(t::TensorMap) = t.data
 fusiontrees(t::TrivialTensorMap) = ((nothing, nothing),)
 fusiontrees(t::TensorMap) = TensorKeyIterator(t.rowr, t.colr)
 
-@inline function Base.getindex(t::TensorMap{E,S,N₁,N₂,I},
-                               sectors::Tuple{Vararg{I}}) where {E,S,N₁,N₂,I<:Sector}
+@inline function Base.getindex(t::TensorMap, sectors::Tuple{I,Vararg{I}}) where {I<:Sector}
+    I === sectortype(t) || throw(SectorMismatch("Not a valid sectortype for this tensor."))
     FusionStyle(I) isa UniqueFusion ||
         throw(SectorMismatch("Indexing with sectors only possible if unique fusion"))
     s1 = TupleTools.getindices(sectors, codomainind(t))
