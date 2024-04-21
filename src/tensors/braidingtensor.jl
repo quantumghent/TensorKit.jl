@@ -201,7 +201,8 @@ function add_transform!(tdst::AbstractTensorMap,
                         α::Number,
                         β::Number,
                         backend::Backend...)
-    return add_transform!(tdst, TensorMap(tsrc), (p₁, p₂), fusiontreetransform, α, β, backend...)
+    return add_transform!(tdst, TensorMap(tsrc), (p₁, p₂), fusiontreetransform, α, β,
+                          backend...)
 end
 
 # VectorInterface
