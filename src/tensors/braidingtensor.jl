@@ -127,7 +127,9 @@ end
 
 Base.similar(::BraidingTensor, T::Type, P::TensorMapSpace) = TensorMap(undef, T, P)
 
-Base.copy(b::BraidingTensor) = copy!(similar(b), b)
+# efficient copy constructor
+Base.copy(b::BraidingTensor) = BraidingTensor(copy(b.V1), copy(b.V2), b.adjoint)
+
 function Base.copy!(t::TensorMap, b::BraidingTensor)
     space(t) == space(b) || throw(SectorMismatch())
     fill!(t, zero(scalartype(t)))
