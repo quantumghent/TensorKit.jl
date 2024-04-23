@@ -1,12 +1,16 @@
-name: CI-sectors
+name: CI - TensorKitSectors
 on:
   push:
     branches:
       - 'master'
       - 'main'
       - 'release-'
+    paths:
+      - TensorKitSectors/
     tags: '*'
   pull_request:
+    paths:
+      - TensorKitSectors/
   workflow_dispatch:
 
 concurrency:
