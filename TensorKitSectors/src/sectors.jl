@@ -130,28 +130,38 @@ Return an `Integer` representing the number of times `c` appears in the fusion p
 function Nsymbol end
 
 # trait to describe the fusion of superselection sectors
+"""
+    FusionStyle(::Sector)
+    FusionStyle(I::Type{<:Sector})
+
+Trait to describe the fusion behavior of sectors of type `I`, which can be either
+*   `UniqueFusion()`: single fusion output when fusing two sectors;
+*   `SimpleFusion()`: multiple outputs, but every output occurs at most one,
+    also known as multiplicity-free (e.g. irreps of ``SU(2)``);
+*   `GenericFusion()`: multiple outputs that can occur more than once (e.g. irreps
+    of ``SU(3)``).
+
+There is an abstract supertype `MultipleFusion` of which both `SimpleFusion` and
+`GenericFusion` are subtypes. Furthermore, there is a type alias `MultiplicityFreeFusion`
+for those fusion types which do not require muliplicity labels, i.e.
+`MultiplicityFreeFusion = Union{UniqueFusion,SimpleFusion}`.
+"""
 abstract type FusionStyle end
+FusionStyle(a::Sector) = FusionStyle(typeof(a))
+
 struct UniqueFusion <: FusionStyle end # unique fusion output when fusing two sectors
 abstract type MultipleFusion <: FusionStyle end
 struct SimpleFusion <: MultipleFusion end # multiple fusion but multiplicity free
 struct GenericFusion <: MultipleFusion end # multiple fusion with multiplicities
 const MultiplicityFreeFusion = Union{UniqueFusion,SimpleFusion}
 
-"""
-    FusionStyle(a::Sector) -> ::FusionStyle
-    FusionStyle(I::Type{<:Sector}) -> ::FusionStyle
+# combine fusion properties of tensor products of sectors
+Base.:&(f::F, ::F) where {F<:FusionStyle} = f
+Base.:&(f₁::FusionStyle, f₂::FusionStyle) = f₂ & f₁
 
-Return the type of fusion behavior of sectors of type I, which can be either
-*   `UniqueFusion()`: single fusion output when fusing two sectors;
-*   `SimpleFusion()`: multiple outputs, but every output occurs at most one,
-    also known as multiplicity free (e.g. irreps of ``SU(2)``);
-*   `GenericFusion()`: multiple outputs that can occur more than once (e.g. irreps
-    of ``SU(3)``).
-There is an abstract supertype `MultipleFusion` of which both `SimpleFusion` and
-`GenericFusion` are subtypes. Furthermore, there is a type alias `MultiplicityFreeFusion` for those fusion types which do not require muliplicity labels, i.e.
-`MultiplicityFreeFusion = Union{UniqueFusion,SimpleFusion}`.
-"""
-FusionStyle(a::Sector) = FusionStyle(typeof(a))
+Base.:&(::SimpleFusion, ::UniqueFusion) = SimpleFusion()
+Base.:&(::GenericFusion, ::UniqueFusion) = GenericFusion()
+Base.:&(::GenericFusion, ::SimpleFusion) = GenericFusion()
 
 """
     Fsymbol(a::I, b::I, c::I, d::I, e::I, f::I) where {I<:Sector}
@@ -173,21 +183,6 @@ it is a rank 4 array of size
 `(Nsymbol(a, b, e), Nsymbol(e, c, d), Nsymbol(b, c, f), Nsymbol(a, f, d))`.
 """
 function Fsymbol end
-
-"""
-    Rsymbol(a::I, b::I, c::I) where {I<:Sector}
-
-Returns the R-symbol ``R^{ab}_c`` that maps between ``c → a ⊗ b`` and ``c → b ⊗ a`` as in
-```
-a -<-μ-<- c                                 b -<-ν-<- c
-     ∨          -> Rsymbol(a,b,c)[μ,ν]           v
-     b                                           a
-```
-If `FusionStyle(I)` is `UniqueFusion()` or `SimpleFusion()`, the R-symbol is a
-number. Otherwise it is a square matrix with row and column size
-`Nsymbol(a,b,c) == Nsymbol(b,a,c)`.
-"""
-function Rsymbol end
 
 # If a I::Sector with `fusion(I) == GenericFusion` fusion wants to have custom vertex
 # labels, a specialized method for `vertindex2label` should be added
@@ -213,14 +208,6 @@ _ind2label(::GenericFusion, k, a, b, c) = k
 Return the type of labels for the fusion vertices of sectors of type `I`.
 """
 vertex_labeltype(I::Type{<:Sector}) = typeof(vertex_ind2label(1, one(I), one(I), one(I)))
-
-# combine fusion properties of tensor products of sectors
-Base.:&(f::F, ::F) where {F<:FusionStyle} = f
-Base.:&(f₁::FusionStyle, f₂::FusionStyle) = f₂ & f₁
-
-Base.:&(::SimpleFusion, ::UniqueFusion) = SimpleFusion()
-Base.:&(::GenericFusion, ::UniqueFusion) = GenericFusion()
-Base.:&(::GenericFusion, ::SimpleFusion) = GenericFusion()
 
 # properties that can be determined in terms of the F symbol
 # TODO: find mechanism for returning these numbers with custom type T<:AbstractFloat
@@ -254,12 +241,17 @@ function frobeniusschur(a::Sector)
     end
 end
 
-"""
-    twist(a::Sector)
-
-Return the twist of a sector `a`
-"""
-twist(a::Sector) = sum(dim(b) / dim(a) * tr(Rsymbol(a, a, b)) for b in a ⊗ a)
+# Not necessary
+function Asymbol(a::I, b::I, c::I) where {I<:Sector}
+    if FusionStyle(I) isa UniqueFusion || FusionStyle(I) isa SimpleFusion
+        (sqrtdim(a) * sqrtdim(b) * isqrtdim(c)) *
+        conj(frobeniusschur(a) * Fsymbol(dual(a), a, b, b, one(a), c))
+    else
+        reshape((sqrtdim(a) * sqrtdim(b) * isqrtdim(c)) *
+                conj(frobeniusschur(a) * Fsymbol(dual(a), a, b, b, one(a), c)),
+                (Nsymbol(a, b, c), Nsymbol(dual(a), c, b)))
+    end
+end
 
 """
     Bsymbol(a::I, b::I, c::I) where {I<:Sector}
@@ -285,23 +277,27 @@ function Bsymbol(a::I, b::I, c::I) where {I<:Sector}
     end
 end
 
-# Not necessary
-function Asymbol(a::I, b::I, c::I) where {I<:Sector}
-    if FusionStyle(I) isa UniqueFusion || FusionStyle(I) isa SimpleFusion
-        (sqrtdim(a) * sqrtdim(b) * isqrtdim(c)) *
-        conj(frobeniusschur(a) * Fsymbol(dual(a), a, b, b, one(a), c))
-    else
-        reshape((sqrtdim(a) * sqrtdim(b) * isqrtdim(c)) *
-                conj(frobeniusschur(a) * Fsymbol(dual(a), a, b, b, one(a), c)),
-                (Nsymbol(a, b, c), Nsymbol(dual(a), c, b)))
-    end
-end
-
 # Braiding:
 #-------------------------------------------------
 # trait to describe type to denote how the elementary spaces in a tensor product space
 # interact under permutations or actions of the braid group
-abstract type BraidingStyle end # generic braiding
+"""
+    BraidingStyle(::Sector) -> ::BraidingStyle
+    BraidingStyle(I::Type{<:Sector}) -> ::BraidingStyle
+
+Return the type of braiding and twist behavior of sectors of type `I`, which can be either
+*   `Bosonic()`: symmetric braiding with trivial twist (i.e. identity)
+*   `Fermionic()`: symmetric braiding with non-trivial twist (squares to identity)
+*   `Anyonic()`: general ``R_(a,b)^c`` phase or matrix (depending on `SimpleFusion` or
+    `GenericFusion` fusion) and arbitrary twists
+
+Note that `Bosonic` and `Fermionic` are subtypes of `SymmetricBraiding`, which means that
+braids are in fact equivalent to crossings (i.e. braiding twice is an identity:
+`isone(Rsymbol(b,a,c)*Rsymbol(a,b,c)) == true`) and permutations are uniquely defined.
+"""
+abstract type BraidingStyle end
+BraidingStyle(a::Sector) = BraidingStyle(typeof(a))
+
 abstract type HasBraiding <: BraidingStyle end
 struct NoBraiding <: BraidingStyle end
 abstract type SymmetricBraiding <: HasBraiding end # symmetric braiding => actions of permutation group are well defined
@@ -319,20 +315,28 @@ Base.:&(::Fermionic, ::NoBraiding) = NoBraiding()
 Base.:&(::Anyonic, ::NoBraiding) = NoBraiding()
 
 """
-    BraidingStyle(::Sector) -> ::BraidingStyle
-    BraidingStyle(I::Type{<:Sector}) -> ::BraidingStyle
+    Rsymbol(a::I, b::I, c::I) where {I<:Sector}
 
-Return the type of braiding and twist behavior of sectors of type `I`, which can be either
-*   `Bosonic()`: symmetric braiding with trivial twist (i.e. identity)
-*   `Fermionic()`: symmetric braiding with non-trivial twist (squares to identity)
-*   `Anyonic()`: general ``R_(a,b)^c`` phase or matrix (depending on `SimpleFusion` or
-    `GenericFusion` fusion) and arbitrary twists
-
-Note that `Bosonic` and `Fermionic` are subtypes of `SymmetricBraiding`, which means that
-braids are in fact equivalent to crossings (i.e. braiding twice is an identity:
-`isone(Rsymbol(b,a,c)*Rsymbol(a,b,c)) == true`) and permutations are uniquely defined.
+Returns the R-symbol ``R^{ab}_c`` that maps between ``c → a ⊗ b`` and ``c → b ⊗ a`` as in
+```
+a -<-μ-<- c                                 b -<-ν-<- c
+     ∨          -> Rsymbol(a,b,c)[μ,ν]           v
+     b                                           a
+```
+If `FusionStyle(I)` is `UniqueFusion()` or `SimpleFusion()`, the R-symbol is a
+number. Otherwise it is a square matrix with row and column size
+`Nsymbol(a,b,c) == Nsymbol(b,a,c)`.
 """
-BraidingStyle(a::Sector) = BraidingStyle(typeof(a))
+function Rsymbol end
+
+# properties that can be determined in terms of the R symbol
+
+"""
+    twist(a::Sector)
+
+Return the twist of a sector `a`
+"""
+twist(a::Sector) = sum(dim(b) / dim(a) * tr(Rsymbol(a, a, b)) for b in a ⊗ a)
 
 # Pentagon and Hexagon equations
 #-------------------------------------------------------------------------------
