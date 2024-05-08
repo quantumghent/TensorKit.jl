@@ -86,14 +86,14 @@ error will be thrown.
 See also [`unitary`](@ref) when `InnerProductStyle(cod) === EuclideanProduct()`.
 """
 function isomorphism(::Type{A}, V::TensorMapSpace{S,N₁,N₂}) where {A<:MatOrNumber,S,N₁,N₂}
-    codomain(V) ≅ domain(V) || throw(SpaceMismatch("codomain and domain are not isomorphic: $V"))
+    codomain(V) ≅ domain(V) ||
+        throw(SpaceMismatch("codomain and domain are not isomorphic: $V"))
     t = tensormaptype(S, N₁, N₂, A)(undef, codomain(V), domain(V))
     for (_, b) in blocks(t)
         MatrixAlgebra.one!(b)
     end
     return t
 end
-
 
 """
     unitary([T::Type=Float64,] codomain::TensorSpace, domain::TensorSpace) -> TensorMap
