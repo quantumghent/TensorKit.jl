@@ -286,18 +286,27 @@ for randfun in (:rand, :randn, :randexp)
         @doc $_docstr! Random.$randfun!
 
         # converting `codomain` and `domain` into `HomSpace`
-        function Random.$randfun(codomain::TensorSpace{S},
-                                 domain::TensorSpace{S}=one(codomain)) where {S}
+        function Random.$randfun(codomain::TensorSpace{S}, domain::TensorSpace{S}) where {S}
             return Random.$randfun(codomain ← domain)
         end
         function Random.$randfun(::Type{T}, codomain::TensorSpace{S},
-                                 domain::TensorSpace{S}=one(codomain)) where {T,S}
+                                 domain::TensorSpace{S}) where {T,S}
             return Random.$randfun(T, codomain ← domain)
         end
         function Random.$randfun(rng::Random.AbstractRNG, ::Type{T},
                                  codomain::TensorSpace{S},
-                                 domain::TensorSpace{S}=one(codomain)) where {T,S}
+                                 domain::TensorSpace{S}) where {T,S}
             return Random.$randfun(rng, T, codomain ← domain)
+        end
+
+        # accepting single `TensorSpace`
+        Random.$randfun(codomain::TensorSpace) = Random.$randfun(codomain ← one(codomain))
+        function Random.$randfun(::Type{T}, codomain::TensorSpace) where {T}
+            return Random.$randfun(T, codomain ← one(codomain))
+        end
+        function Random.$randfun(rng::Random.AbstractRNG, ::Type{T},
+                                 codomain::TensorSpace) where {T}
+            return Random.$randfun(rng, T, codomain ← one(domain))
         end
 
         # filling in default eltype
@@ -355,68 +364,68 @@ generated.
 Alternatively, the domain and codomain can be specified by passing a [`HomSpace`](@ref)
 using the syntax `codomain ← domain` or `domain → codomain`.
 """
-function TensorMap(f, ::Type{T}, codom::ProductSpace{S},
-                   dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
-    return TensorMap(d -> f(T, d), codom, dom)
-end
+# function TensorMap(f, ::Type{T}, codom::ProductSpace{S},
+#                    dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
+#     return TensorMap(d -> f(T, d), codom, dom)
+# end
 
-function TensorMap(::Type{T}, codom::ProductSpace{S},
-                   dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
-    return TensorMap(d -> Array{T}(undef, d), codom, dom)
-end
+# function TensorMap(::Type{T}, codom::ProductSpace{S},
+#                    dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
+#     return TensorMap(d -> Array{T}(undef, d), codom, dom)
+# end
 
-function TensorMap(::UndefInitializer, ::Type{T}, codom::ProductSpace{S},
-                   dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
-    return TensorMap(d -> Array{T}(undef, d), codom, dom)
-end
+# function TensorMap(::UndefInitializer, ::Type{T}, codom::ProductSpace{S},
+#                    dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
+#     return TensorMap(d -> Array{T}(undef, d), codom, dom)
+# end
 
-function TensorMap(::UndefInitializer, codom::ProductSpace{S},
-                   dom::ProductSpace{S}) where {S<:IndexSpace}
-    return TensorMap(undef, Float64, codom, dom)
-end
+# function TensorMap(::UndefInitializer, codom::ProductSpace{S},
+#                    dom::ProductSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(undef, Float64, codom, dom)
+# end
 
-function TensorMap(::Type{T}, codom::TensorSpace{S},
-                   dom::TensorSpace{S}) where {T<:Number,S<:IndexSpace}
-    return TensorMap(T, convert(ProductSpace, codom), convert(ProductSpace, dom))
-end
+# function TensorMap(::Type{T}, codom::TensorSpace{S},
+#                    dom::TensorSpace{S}) where {T<:Number,S<:IndexSpace}
+#     return TensorMap(T, convert(ProductSpace, codom), convert(ProductSpace, dom))
+# end
 
-function TensorMap(dataorf, codom::TensorSpace{S},
-                   dom::TensorSpace{S}) where {S<:IndexSpace}
-    return TensorMap(dataorf, convert(ProductSpace, codom), convert(ProductSpace, dom))
-end
+# function TensorMap(dataorf, codom::TensorSpace{S},
+#                    dom::TensorSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(dataorf, convert(ProductSpace, codom), convert(ProductSpace, dom))
+# end
 
-function TensorMap(dataorf, ::Type{T}, codom::TensorSpace{S},
-                   dom::TensorSpace{S}) where {T<:Number,S<:IndexSpace}
-    return TensorMap(dataorf, T, convert(ProductSpace, codom), convert(ProductSpace, dom))
-end
+# function TensorMap(dataorf, ::Type{T}, codom::TensorSpace{S},
+#                    dom::TensorSpace{S}) where {T<:Number,S<:IndexSpace}
+#     return TensorMap(dataorf, T, convert(ProductSpace, codom), convert(ProductSpace, dom))
+# end
 
-function TensorMap(codom::TensorSpace{S}, dom::TensorSpace{S}) where {S<:IndexSpace}
-    return TensorMap(Float64, convert(ProductSpace, codom), convert(ProductSpace, dom))
-end
+# function TensorMap(codom::TensorSpace{S}, dom::TensorSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(Float64, convert(ProductSpace, codom), convert(ProductSpace, dom))
+# end
 
-function TensorMap(dataorf, T::Type{<:Number}, P::TensorMapSpace{S}) where {S<:IndexSpace}
-    return TensorMap(dataorf, T, codomain(P), domain(P))
-end
+# function TensorMap(dataorf, T::Type{<:Number}, P::TensorMapSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(dataorf, T, codomain(P), domain(P))
+# end
 
-function TensorMap(dataorf, P::TensorMapSpace{S}) where {S<:IndexSpace}
-    return TensorMap(dataorf, codomain(P), domain(P))
-end
+# function TensorMap(dataorf, P::TensorMapSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(dataorf, codomain(P), domain(P))
+# end
 
-function TensorMap(T::Type{<:Number}, P::TensorMapSpace{S}) where {S<:IndexSpace}
-    return TensorMap(T, codomain(P), domain(P))
-end
+# function TensorMap(T::Type{<:Number}, P::TensorMapSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(T, codomain(P), domain(P))
+# end
 
-TensorMap(P::TensorMapSpace{S}) where {S<:IndexSpace} = TensorMap(codomain(P), domain(P))
+# TensorMap(P::TensorMapSpace{S}) where {S<:IndexSpace} = TensorMap(codomain(P), domain(P))
 
-function Tensor(dataorf, T::Type{<:Number}, P::TensorSpace{S}) where {S<:IndexSpace}
-    return TensorMap(dataorf, T, P, one(P))
-end
+# function Tensor(dataorf, T::Type{<:Number}, P::TensorSpace{S}) where {S<:IndexSpace}
+#     return TensorMap(dataorf, T, P, one(P))
+# end
 
-Tensor(dataorf, P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(dataorf, P, one(P))
+# Tensor(dataorf, P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(dataorf, P, one(P))
 
-Tensor(T::Type{<:Number}, P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(T, P, one(P))
+# Tensor(T::Type{<:Number}, P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(T, P, one(P))
 
-Tensor(P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(P, one(P))
+# Tensor(P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(P, one(P))
 
 # constructor starting from a dense array
 """
