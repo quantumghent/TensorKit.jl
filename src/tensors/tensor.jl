@@ -485,7 +485,7 @@ function TensorMap(data::DenseArray, V::TensorMapSpace{S,N₁,N₂};
         E = scalartype(A)
         return TensorMap{E,S,N₁,N₂,Trivial,A,Nothing,Nothing}(data2, codom, dom)
     else
-        t = TensorMap(zeros, eltype(data), codom, dom)
+        t = zeros(eltype(data), codom, dom)
         ta = convert(Array, t)
         l = length(ta)
         dimt = dim(t)
@@ -511,7 +511,7 @@ function TensorMap(data::DenseArray, V::TensorMapSpace{S,N₁,N₂};
             throw(ArgumentError("Data has non-zero elements at incompatible positions"))
         end
         if eltype(lhs) != scalartype(t)
-            t2 = TensorMap(zeros, promote_type(eltype(lhs), scalartype(t)), codom, dom)
+            t2 = zeros(promote_type(eltype(lhs), scalartype(t)), codom, dom)
         else
             t2 = t
         end
