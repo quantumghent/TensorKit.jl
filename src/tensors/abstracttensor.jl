@@ -226,7 +226,6 @@ Return the dimensions of the block of a tensor corresponding to a coupled sector
 Return an iterator over all splitting - fusion tree pairs of a tensor.
 """ fusiontrees(::AbstractTensorMap)
 
-
 # Similar
 #---------
 # The implementation is written for similar(t, TorA, V::TensorMapSpace) -> TensorMap
