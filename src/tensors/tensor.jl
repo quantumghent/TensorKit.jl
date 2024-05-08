@@ -530,52 +530,26 @@ function TensorMap(data::DenseArray, codom::TensorSpace{S},
     return TensorMap(data, codom ← dom; kwargs...)
 end
 
-
 # Efficient copy constructors
 #-----------------------------
 Base.copy(t::TrivialTensorMap) = typeof(t)(copy(t.data), t.codom, t.dom)
 Base.copy(t::TensorMap) = typeof(t)(deepcopy(t.data), t.codom, t.dom, t.rowr, t.colr)
 
-# Similar
-#---------
-# 4 arguments
-function Base.similar(t::AbstractTensorMap, T::Type, codomain::VectorSpace,
-                      domain::VectorSpace)
-    return similar(t, T, codomain ← domain)
-end
-# 3 arguments
-function Base.similar(t::AbstractTensorMap, codomain::VectorSpace, domain::VectorSpace)
-    return similar(t, scalartype(t), codomain ← domain)
-end
-function Base.similar(t::AbstractTensorMap, T::Type, codomain::VectorSpace)
-    return similar(t, T, codomain ← one(codomain))
-end
-# 2 arguments
-function Base.similar(t::AbstractTensorMap, codomain::VectorSpace)
-    return similar(t, scalartype(t), codomain ← one(codomain))
-end
-Base.similar(t::AbstractTensorMap, P::TensorMapSpace) = similar(t, scalartype(t), P)
-Base.similar(t::AbstractTensorMap, T::Type) = similar(t, T, space(t))
-# 1 argument
-Base.similar(t::AbstractTensorMap) = similar(t, scalartype(t), space(t))
-
-# actual implementation
-function Base.similar(t::TensorMap, ::Type{T}, P::TensorMapSpace{S}) where {T,S}
+# specializations when data can be re-used
+function Base.similar(t::TensorMap, ::Type{TorA},
+                      P::TensorMapSpace{S}) where {TorA<:Union{Number,
+                                                               DenseMatrix{<:Number}},S}
     N₁ = length(codomain(P))
     N₂ = length(domain(P))
     I = sectortype(S)
+
     # speed up specialized cases
-    if I === Trivial
-        data = similar(t.data, T, (dim(codomain(P)), dim(domain(P))))
-        A = typeof(data)
-        return TrivialTensorMap{T,S,N₁,N₂,A}(data, codomain(P), domain(P))
-    end
-    F₁ = fusiontreetype(I, N₁)
-    F₂ = fusiontreetype(I, N₂)
+    TT = tensormaptype(S, N₁, N₂, TorA)
+    I === Trivial && return TT(undef, codomain(P), domain(P))
+
     if space(t) == P
         data = SectorDict(c => similar(b, T) for (c, b) in blocks(t))
-        A = typeof(data)
-        return TensorMap{T,S,N₁,N₂,I,A,F₁,F₂}(data, codomain(P), domain(P), t.rowr, t.colr)
+        return TT(data, codomain(P), domain(P), t.rowr, t.colr)
     end
 
     blocksectoriterator = blocksectors(P)
@@ -597,7 +571,7 @@ function Base.similar(t::TensorMap, ::Type{T}, P::TensorMapSpace{S}) where {T,S}
     else
         rowr, rowdims = _buildblockstructure(codomain(P), blocksectoriterator)
     end
-    # try to recylce colr
+    # try to recycle colr
     if domain(P) == codomain(t) && all(c -> haskey(t.rowr, c), blocksectoriterator)
         if length(t.rowr) == length(blocksectoriterator)
             colr = t.rowr
@@ -615,11 +589,10 @@ function Base.similar(t::TensorMap, ::Type{T}, P::TensorMapSpace{S}) where {T,S}
     else
         colr, coldims = _buildblockstructure(domain(P), blocksectoriterator)
     end
-    M = similarstoragetype(t, T)
+    M = storagetype(TT)
     data = SectorDict{I,M}(c => M(undef, (rowdims[c], coldims[c]))
                            for c in blocksectoriterator)
-    A = typeof(data)
-    return TensorMap{T,S,N₁,N₂,I,A,F₁,F₂}(data, codomain(P), domain(P), rowr, colr)
+    return TT(data, codomain(P), domain(P), rowr, colr)
 end
 
 function Base.complex(t::AbstractTensorMap)

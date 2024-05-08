@@ -226,6 +226,43 @@ Return the dimensions of the block of a tensor corresponding to a coupled sector
 Return an iterator over all splitting - fusion tree pairs of a tensor.
 """ fusiontrees(::AbstractTensorMap)
 
+
+# Similar
+#---------
+# The implementation is written for similar(t, TorA, V::TensorMapSpace) -> TensorMap
+# and all other methods are just filling in default arguments
+# 4 arguments
+function Base.similar(t::AbstractTensorMap, ::Type{T}, codomain::TensorSpace{S},
+                      domain::TensorSpace{S}) where {T,S}
+    return similar(t, T, codomain ← domain)
+end
+# 3 arguments
+function Base.similar(t::AbstractTensorMap, codomain::TensorSpace{S},
+                      domain::TensorSpace{S}) where {S}
+    return similar(t, storagetype(t), codomain ← domain)
+end
+function Base.similar(t::AbstractTensorMap, ::Type{T}, codomain::TensorSpace) where {T}
+    return similar(t, T, codomain ← one(codomain))
+end
+# 2 arguments
+function Base.similar(t::AbstractTensorMap, codomain::TensorSpace)
+    return similar(t, storagetype(t), codomain ← one(codomain))
+end
+Base.similar(t::AbstractTensorMap, P::TensorMapSpace) = similar(t, storagetype(t), P)
+Base.similar(t::AbstractTensorMap, ::Type{T}) where {T} = similar(t, T, space(t))
+# 1 argument
+Base.similar(t::AbstractTensorMap) = similar(t, storagetype(t), space(t))
+
+# generic implementation for AbstractTensorMap -> returns `TensorMap`
+function Base.similar(::AbstractTensorMap, ::Type{TorA},
+                      P::TensorMapSpace{S}) where {TorA<:Union{Number,
+                                                               DenseMatrix{<:Number}},S}
+    N₁ = length(codomain(P))
+    N₂ = length(domain(P))
+    TT = tensormaptype(S, N₁, N₂, TorA)
+    return TT(undef, codomain(P), domain(P))
+end
+
 # Equality and approximality
 #----------------------------
 function Base.:(==)(t1::AbstractTensorMap, t2::AbstractTensorMap)
