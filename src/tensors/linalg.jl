@@ -64,7 +64,7 @@ end
 """
     isomorphism([T::Type=Float64,] codomain::TensorSpace, domain::TensorSpace) -> TensorMap
     isomorphism([T::Type=Float64,] codomain ← domain) -> TensorMap
-    isomorphism([T::Type=Float64,] domain ← codomain) -> TensorMap
+    isomorphism([T::Type=Float64,] domain → codomain) -> TensorMap
 
 Construct a specific isomorphism between the codomain and the domain, i.e. return a
 `t::TensorMap` where either `scalartype(t) = T` if `T` is a `Number` type or
@@ -90,7 +90,7 @@ end
 """
     unitary([T::Type=Float64,] codomain::TensorSpace, domain::TensorSpace) -> TensorMap
     unitary([T::Type=Float64,] codomain ← domain) -> TensorMap
-    unitary([T::Type=Float64,] domain ← codomain) -> TensorMap
+    unitary([T::Type=Float64,] domain → codomain) -> TensorMap
 
 Construct a specific unitary morphism between the codomain and the domain, i.e. return a
 `t::TensorMap` where either `scalartype(t) = T` if `T` is a `Number` type or
@@ -111,7 +111,7 @@ end
 """
     isometry([T::Type=Float64,] codomain::TensorSpace, domain::TensorSpace) -> TensorMap
     isometry([T::Type=Float64,] codomain ← domain) -> TensorMap
-    isometry([T::Type=Float64,] domain ← codomain) -> TensorMap
+    isometry([T::Type=Float64,] domain → codomain) -> TensorMap
 
 Construct a specific isometry between the codomain and the domain, i.e. return a
 `t::TensorMap` where either `scalartype(t) = T` if `T` is a `Number` type or
