@@ -176,31 +176,29 @@ function TensorMap(data::AbstractDict{<:Sector,<:DenseMatrix}, codom::ProductSpa
 end
 
 # constructor from general callable that produces block data
-function TensorMap(f, codom::ProductSpace{S,N₁},
-                   dom::ProductSpace{S,N₂}) where {S<:IndexSpace,N₁,N₂}
-    I = sectortype(S)
-    if I == Trivial
-        d1 = dim(codom)
-        d2 = dim(dom)
-        data = f((d1, d2))
-        A = typeof(data)
-        E = scalartype(A)
-        return TensorMap{E,S,N₁,N₂,Trivial,A,Nothing,Nothing}(data, codom, dom)
-    end
-    blocksectoriterator = blocksectors(codom ← dom)
-    rowr, rowdims = _buildblockstructure(codom, blocksectoriterator)
-    colr, coldims = _buildblockstructure(dom, blocksectoriterator)
-    if !isreal(I)
-        data = SectorDict(c => complex(f((rowdims[c], coldims[c])))
-                          for c in blocksectoriterator)
+"""
+    TensorMap{E}(::UndefInitializer, codomain::ProductSpace{S,N₁}, domain::ProductSpace{S,N₂})
+                where {E,S,N₁,N₂}
+    TensorMap{E}(::UndefInitializer, codomain ← domain)
+    TensorMap{E}(::UndefInitializer, domain → codomain)
+
+Construct a `TensorMap` with uninitialized data.
+"""
+function TensorMap{E}(::UndefInitializer, codomain::ProductSpace{S,N₁},
+                      domain::ProductSpace{S,N₂}) where {E,S,N₁,N₂}
+    # TODO: do we need to check if the storagetype is compatible with `tensormaptype`?
+    TT = tensormaptype(S, N₁, N₂, E) # construct full type
+    if sectortype(S) == Trivial
+        data = Array{E}(undef, dim(codomain), dim(domain))
+        return TT(data, codomain, domain)
     else
-        data = SectorDict(c => f((rowdims[c], coldims[c])) for c in blocksectoriterator)
+        blocksectoriterator = blocksectors(codomain ← domain)
+        rowr, rowdims = _buildblockstructure(codomain, blocksectoriterator)
+        colr, coldims = _buildblockstructure(domain, blocksectoriterator)
+        data = SectorDict(c => Array{E}(undef, rowdims[c], coldims[c])
+                          for c in blocksectoriterator)
+        return TT(data, codomain, domain, rowr, colr)
     end
-    F₁ = fusiontreetype(I, N₁)
-    F₂ = fusiontreetype(I, N₂)
-    A = typeof(data)
-    E = scalartype(valtype(A))
-    return TensorMap{E,S,N₁,N₂,I,A,F₁,F₂}(data, codom, dom, rowr, colr)
 end
 
 # auxiliary function
