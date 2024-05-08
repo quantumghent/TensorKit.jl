@@ -224,6 +224,41 @@ function _buildblockstructure(P::ProductSpace{S,N}, blocksectors) where {S<:Inde
     return treeranges, blockdims
 end
 
+
+@doc """
+    zeros([T=Float64,], codomain::ProductSpace{S,N₁}, domain::ProductSpace{S,N₂}) where {S,N₁,N₂,T}
+    zeros([T=Float64,], codomain ← domain)
+
+Create a `TensorMap` with element type `T`, of all zeros with spaces specified by `codomain` and `domain`.
+"""
+Base.zeros
+
+@doc """
+    ones([T=Float64,], codomain::ProductSpace{S,N₁}, domain::ProductSpace{S,N₂}) where {S,N₁,N₂,T}
+    ones([T=Float64,], codomain ← domain)
+    
+Create a `TensorMap` with element type `T`, of all ones with spaces specified by `codomain` and `domain`.
+"""
+Base.ones
+
+for (fname, felt) in ((:zeros, :zero), (:ones, :one))
+    @eval begin
+        function Base.$fname(codomain::TensorSpace{S}, domain::TensorSpace{S}) where {S}
+            return Base.$fname(codomain ← domain)
+        end
+        function Base.$fname(::Type{T}, codomain::TensorSpace{S},
+                             domain::TensorSpace{S}) where {T,S}
+            return Base.$fname(T, codomain ← domain)
+        end
+        Base.$fname(V::TensorMapSpace) = Base.$fname(Float64, V)
+        function Base.$fname(::Type{T}, V::TensorMapSpace) where {T}
+            t = TensorMap{T}(undef, V)
+            fill!(t, $felt(T))
+            return t
+        end
+    end
+end
+
 """
     TensorMap([f, eltype,] codomain::ProductSpace{S,N₁}, domain::ProductSpace{S,N₂})
                 where {S<:ElementarySpace,N₁,N₂}
