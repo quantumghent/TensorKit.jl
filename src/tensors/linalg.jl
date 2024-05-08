@@ -434,7 +434,7 @@ function ⊗(t1::AbstractTensorMap, t2::AbstractTensorMap)
     dom1, dom2 = domain(t1), domain(t2)
     cod = cod1 ⊗ cod2
     dom = dom1 ⊗ dom2
-    t = TensorMap(zeros, promote_type(scalartype(t1), scalartype(t2)), cod, dom)
+    t = zeros(promote_type(scalartype(t1), scalartype(t2)), cod ← dom)
     if sectortype(S) === Trivial
         d1 = dim(cod1)
         d2 = dim(cod2)
