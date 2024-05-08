@@ -1,6 +1,6 @@
 @timedtestset "Bugfixes" verbose = true begin
     @testset "BugfixConvert" begin
-        v = TensorMap(randn, ComplexF64,
+        v = randn(ComplexF64,
                       (Vect[(Irrep[U₁] ⊠ Irrep[SU₂] ⊠ FermionParity)]((-3, 1 / 2, 1) => 3,
                                                                       (-5, 1 / 2, 1) => 10,
                                                                       (-7, 1 / 2, 1) => 13,
