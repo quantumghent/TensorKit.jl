@@ -258,11 +258,11 @@ Base.ones
 for (fname, felt) in ((:zeros, :zero), (:ones, :one))
     @eval begin
         function Base.$fname(codomain::TensorSpace{S},
-                             domain::TensorSpace{S}=one(codomain)) where {S}
+                             domain::TensorSpace{S}=one(codomain)) where {S<:IndexSpace}
             return Base.$fname(codomain ← domain)
         end
         function Base.$fname(::Type{T}, codomain::TensorSpace{S},
-                             domain::TensorSpace{S}=one(codomain)) where {T,S}
+                             domain::TensorSpace{S}=one(codomain)) where {T,S<:IndexSpace}
             return Base.$fname(T, codomain ← domain)
         end
         Base.$fname(V::TensorMapSpace) = Base.$fname(Float64, V)
@@ -294,16 +294,16 @@ for randfun in (:rand, :randn, :randexp)
         @doc $_docstr! Random.$randfun!
 
         # converting `codomain` and `domain` into `HomSpace`
-        function Random.$randfun(codomain::TensorSpace{S}, domain::TensorSpace{S}) where {S}
+        function Random.$randfun(codomain::TensorSpace{S}, domain::TensorSpace{S}) where {S<:IndexSpace}
             return Random.$randfun(codomain ← domain)
         end
         function Random.$randfun(::Type{T}, codomain::TensorSpace{S},
-                                 domain::TensorSpace{S}) where {T,S}
+                                 domain::TensorSpace{S}) where {T,S<:IndexSpace}
             return Random.$randfun(T, codomain ← domain)
         end
         function Random.$randfun(rng::Random.AbstractRNG, ::Type{T},
                                  codomain::TensorSpace{S},
-                                 domain::TensorSpace{S}) where {T,S}
+                                 domain::TensorSpace{S}) where {T,S<:IndexSpace}
             return Random.$randfun(rng, T, codomain ← domain)
         end
 
