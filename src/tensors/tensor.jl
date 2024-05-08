@@ -294,7 +294,8 @@ for randfun in (:rand, :randn, :randexp)
         @doc $_docstr! Random.$randfun!
 
         # converting `codomain` and `domain` into `HomSpace`
-        function Random.$randfun(codomain::TensorSpace{S}, domain::TensorSpace{S}) where {S<:IndexSpace}
+        function Random.$randfun(codomain::TensorSpace{S},
+                                 domain::TensorSpace{S}) where {S<:IndexSpace}
             return Random.$randfun(codomain ← domain)
         end
         function Random.$randfun(::Type{T}, codomain::TensorSpace{S},
@@ -345,95 +346,6 @@ for randfun in (:rand, :randn, :randexp)
         end
     end
 end
-
-"""
-    TensorMap([f, eltype,] codomain::ProductSpace{S,N₁}, domain::ProductSpace{S,N₂})
-                where {S<:ElementarySpace,N₁,N₂}
-    TensorMap([f, eltype,], codomain ← domain)
-    TensorMap([f, eltype,], domain → codomain)
-
-Construct a `TensorMap` from a general callable that produces block data for each coupled
-sector.
-
-## Arguments
-- `f`: callable object that returns a `DenseMatrix`, or `UndefInitializer`.
-- `eltype::Type{<:Number}`: element type of the data.
-- `codomain::ProductSpace{S,N₁}`: the codomain as a `ProductSpace` of `N₁` spaces of type
-  `S<:ElementarySpace`.
-- `domain::ProductSpace{S,N₂}`: the domain as a `ProductSpace` of `N₂` spaces of type
-  `S<:ElementarySpace`.
-
-If `eltype` is left unspecified, `f` should support the calling syntax `f(::Tuple{Int,Int})`
-such that `f((m, n))` returns a `DenseMatrix` with `size(f((m, n))) == (m, n)`. If `eltype` is
-specified, `f` is instead called as `f(eltype, (m, n))`. In the case where `f` is left
-unspecified or `undef` is passed explicitly, a `TensorMap` with uninitialized data is
-generated.
-
-Alternatively, the domain and codomain can be specified by passing a [`HomSpace`](@ref)
-using the syntax `codomain ← domain` or `domain → codomain`.
-"""
-# function TensorMap(f, ::Type{T}, codom::ProductSpace{S},
-#                    dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
-#     return TensorMap(d -> f(T, d), codom, dom)
-# end
-
-# function TensorMap(::Type{T}, codom::ProductSpace{S},
-#                    dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
-#     return TensorMap(d -> Array{T}(undef, d), codom, dom)
-# end
-
-# function TensorMap(::UndefInitializer, ::Type{T}, codom::ProductSpace{S},
-#                    dom::ProductSpace{S}) where {S<:IndexSpace,T<:Number}
-#     return TensorMap(d -> Array{T}(undef, d), codom, dom)
-# end
-
-# function TensorMap(::UndefInitializer, codom::ProductSpace{S},
-#                    dom::ProductSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(undef, Float64, codom, dom)
-# end
-
-# function TensorMap(::Type{T}, codom::TensorSpace{S},
-#                    dom::TensorSpace{S}) where {T<:Number,S<:IndexSpace}
-#     return TensorMap(T, convert(ProductSpace, codom), convert(ProductSpace, dom))
-# end
-
-# function TensorMap(dataorf, codom::TensorSpace{S},
-#                    dom::TensorSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(dataorf, convert(ProductSpace, codom), convert(ProductSpace, dom))
-# end
-
-# function TensorMap(dataorf, ::Type{T}, codom::TensorSpace{S},
-#                    dom::TensorSpace{S}) where {T<:Number,S<:IndexSpace}
-#     return TensorMap(dataorf, T, convert(ProductSpace, codom), convert(ProductSpace, dom))
-# end
-
-# function TensorMap(codom::TensorSpace{S}, dom::TensorSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(Float64, convert(ProductSpace, codom), convert(ProductSpace, dom))
-# end
-
-# function TensorMap(dataorf, T::Type{<:Number}, P::TensorMapSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(dataorf, T, codomain(P), domain(P))
-# end
-
-# function TensorMap(dataorf, P::TensorMapSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(dataorf, codomain(P), domain(P))
-# end
-
-# function TensorMap(T::Type{<:Number}, P::TensorMapSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(T, codomain(P), domain(P))
-# end
-
-# TensorMap(P::TensorMapSpace{S}) where {S<:IndexSpace} = TensorMap(codomain(P), domain(P))
-
-# function Tensor(dataorf, T::Type{<:Number}, P::TensorSpace{S}) where {S<:IndexSpace}
-#     return TensorMap(dataorf, T, P, one(P))
-# end
-
-# Tensor(dataorf, P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(dataorf, P, one(P))
-
-# Tensor(T::Type{<:Number}, P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(T, P, one(P))
-
-# Tensor(P::TensorSpace{S}) where {S<:IndexSpace} = TensorMap(P, one(P))
 
 # constructor starting from a dense array
 """
