@@ -118,6 +118,8 @@ using LinearAlgebra: norm, dot, normalize, normalize!, tr,
                      Diagonal, Hermitian
 import Base.Meta
 
+import Random
+
 using PackageExtensionCompat
 
 # Auxiliary files
