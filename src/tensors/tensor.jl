@@ -431,8 +431,8 @@ using the syntax `codomain ← domain` or `domain → codomain`.
 """
     TensorMap(data::DenseArray, codomain::ProductSpace{S,N₁}, domain::ProductSpace{S,N₂};
                     tol=sqrt(eps(real(float(eltype(data)))))) where {S<:ElementarySpace,N₁,N₂}
-    TensorMap(data, codomain ← domain)
-    TensorMap(data, domain → codomain)
+    TensorMap(data, codomain ← domain; tol=sqrt(eps(real(float(eltype(data))))))
+    TensorMap(data, domain → codomain; tol=sqrt(eps(real(float(eltype(data))))))
 
 Construct a `TensorMap` from a plain multidimensional array.
 
@@ -462,8 +462,10 @@ using the syntax `codomain ← domain` or `domain → codomain`.
     array is possible, and only in the case where the `data` actually respects the specified
     symmetry structure.
 """
-function TensorMap(data::DenseArray, codom::ProductSpace{S,N₁}, dom::ProductSpace{S,N₂};
+function TensorMap(data::DenseArray, V::TensorMapSpace{S,N₁,N₂};
                    tol=sqrt(eps(real(float(eltype(data)))))) where {S<:IndexSpace,N₁,N₂}
+    codom = codomain(V)
+    dom = domain(V)
     (d1, d2) = (dim(codom), dim(dom))
     if !(length(data) == d1 * d2 || size(data) == (d1, d2) ||
          size(data) == (dims(codom)..., dims(dom)...))
@@ -515,6 +517,11 @@ function TensorMap(data::DenseArray, codom::ProductSpace{S,N₁}, dom::ProductSp
         return t2
     end
 end
+function TensorMap(data::DenseArray, codom::TensorSpace{S},
+                   dom::TensorSpace{S}; kwargs...) where {S}
+    return TensorMap(data, codom ← dom; kwargs...)
+end
+
 
 # Efficient copy constructors
 #-----------------------------
@@ -861,7 +868,7 @@ end
 #---------------------------
 Base.convert(::Type{TensorMap}, t::TensorMap) = t
 function Base.convert(::Type{TensorMap}, t::AbstractTensorMap)
-    return copy!(TensorMap(undef, scalartype(t), codomain(t), domain(t)), t)
+    return copy!(TensorMap{scalartype(t)}(undef, space(t)), t)
 end
 
 function Base.convert(T::Type{<:TensorMap{E,S,N₁,N₂}},
