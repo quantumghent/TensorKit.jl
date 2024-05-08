@@ -138,8 +138,10 @@ Construct a `TensorMap` by explicitly specifying its block data.
 Alternatively, the domain and codomain can be specified by passing a [`HomSpace`](@ref)
 using the syntax `codomain ← domain` or `domain → codomain`.
 """
-function TensorMap(data::AbstractDict{<:Sector,<:DenseMatrix}, codom::ProductSpace{S,N₁},
-                   dom::ProductSpace{S,N₂}) where {S<:IndexSpace,N₁,N₂}
+function TensorMap(data::AbstractDict{<:Sector,<:DenseMatrix},
+                   V::TensorMapSpace{S,N₁,N₂}) where {S,N₁,N₂}
+    dom = domain(V)
+    codom = codomain(V)
     I = sectortype(S)
     I == keytype(data) || throw(SectorMismatch())
     if I == Trivial
@@ -161,18 +163,17 @@ function TensorMap(data::AbstractDict{<:Sector,<:DenseMatrix}, codom::ProductSpa
         isempty(b) || size(b) == (rowdims[c], coldims[c]) ||
             throw(DimensionMismatch("wrong size of block for sector $c"))
     end
-    F₁ = fusiontreetype(I, N₁)
-    F₂ = fusiontreetype(I, N₂)
-    E = scalartype(valtype(data))
-    if !isreal(I)
-        data2 = SectorDict(c => complex(data[c]) for c in blocksectoriterator)
-        A = typeof(data2)
-        return TensorMap{E,S,N₁,N₂,I,A,F₁,F₂}(data2, codom, dom, rowr, colr)
+    data2 = if isreal(I)
+        SectorDict(c => data[c] for c in blocksectoriterator)
     else
-        data2 = SectorDict(c => data[c] for c in blocksectoriterator)
-        A = typeof(data2)
-        return TensorMap{E,S,N₁,N₂,I,A,F₁,F₂}(data2, codom, dom, rowr, colr)
+        SectorDict(c => complex(data[c]) for c in blocksectoriterator)
     end
+    TT = tensormaptype(S, N₁, N₂, valtype(data))
+    return TT(data2, codom, dom, rowr, colr)
+end
+function TensorMap(data::AbstractDict{<:Sector,<:DenseMatrix}, codom::TensorSpace{S},
+                   dom::TensorSpace{S}) where {S}
+    return TensorMap(data, codom ← dom)
 end
 
 # constructor from general callable that produces block data
@@ -184,21 +185,27 @@ end
 
 Construct a `TensorMap` with uninitialized data.
 """
-function TensorMap{E}(::UndefInitializer, codomain::ProductSpace{S,N₁},
-                      domain::ProductSpace{S,N₂}) where {E,S,N₁,N₂}
+function TensorMap{E}(::UndefInitializer, V::TensorMapSpace{S,N₁,N₂}) where {E,S,N₁,N₂}
     # TODO: do we need to check if the storagetype is compatible with `tensormaptype`?
     TT = tensormaptype(S, N₁, N₂, E) # construct full type
     if sectortype(S) == Trivial
-        data = Array{E}(undef, dim(codomain), dim(domain))
-        return TT(data, codomain, domain)
+        data = Array{E}(undef, dim(codomain(V)), dim(domain(V)))
+        return TT(data, codomain(V), domain(V))
     else
-        blocksectoriterator = blocksectors(codomain ← domain)
-        rowr, rowdims = _buildblockstructure(codomain, blocksectoriterator)
-        colr, coldims = _buildblockstructure(domain, blocksectoriterator)
+        blocksectoriterator = blocksectors(V)
+        rowr, rowdims = _buildblockstructure(codomain(V), blocksectoriterator)
+        colr, coldims = _buildblockstructure(domain(V), blocksectoriterator)
         data = SectorDict(c => Array{E}(undef, rowdims[c], coldims[c])
                           for c in blocksectoriterator)
-        return TT(data, codomain, domain, rowr, colr)
+        return TT(data, codomain(V), domain(V), rowr, colr)
     end
+end
+function TensorMap{E}(::UndefInitializer, codomain::TensorSpace{S},
+                      domain::TensorSpace{S}) where {E,S}
+    return TensorMap{E}(undef, codomain ← domain)
+end
+function Tensor{E}(::UndefInitializer, V::TensorSpace{S}) where {E,S}
+    return TensorMap{E}(undef, V ← oneunit(V))
 end
 
 # auxiliary function
