@@ -460,7 +460,7 @@ function Base.similar(t::TensorMap, ::Type{TorA},
     I === Trivial && return TT(undef, codomain(P), domain(P))
 
     if space(t) == P
-        data = SectorDict(c => similar(b, T) for (c, b) in blocks(t))
+        data = SectorDict(c => similar(b, TorA) for (c, b) in blocks(t))
         return TT(data, codomain(P), domain(P), t.rowr, t.colr)
     end
 
