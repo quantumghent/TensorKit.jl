@@ -25,9 +25,7 @@ struct TensorMap{E, S<:IndexSpace, N₁, N₂, I<:Sector, A<:Union{<:DenseMatrix
                                             dom::TensorSpace{S}) where {E,S<:IndexSpace,N₁,N₂,
                                             I<:Sector,A<:SectorDict{I,<:DenseMatrix{E}},F₁,F₂}
         I === sectortype(S) || throw(SectorMismatch())
-        blocksectoriterator = blocksectors(codom ← dom)
-        rowr, rowdims = _buildblockstructure(codom, blocksectoriterator)
-        colr, coldims = _buildblockstructure(dom, blocksectoriterator)
+        (rowr, rowdims), (colr, coldims) = blockstructure(codom ← dom)
         data = SectorDict(c => valtype(A)(undef, rowdims[c], coldims[c]) for c in blocksectoriterator)
         return TensorMap{E,S,N₁,N₂,I,A,F₁,F₂}(data, codom, dom, rowr, colr)
     end
@@ -173,8 +171,8 @@ function TensorMap(data::AbstractDict{<:Sector,<:DenseMatrix},
     for c in blocksectoriterator
         haskey(data, c) || throw(SectorMismatch("no data for block sector $c"))
     end
-    rowr, rowdims = _buildblockstructure(codom, blocksectoriterator)
-    colr, coldims = _buildblockstructure(dom, blocksectoriterator)
+    rowr, rowdims = blockstructure(codom, blocksectoriterator)
+    colr, coldims = blockstructure(dom, blocksectoriterator)
     for (c, b) in data
         c in blocksectoriterator || isempty(b) ||
             throw(SectorMismatch("data for block sector $c not expected"))
@@ -214,29 +212,6 @@ function TensorMap{E}(::UndefInitializer, codomain::TensorSpace{S},
 end
 function Tensor{E}(::UndefInitializer, V::TensorSpace{S}) where {E,S}
     return TensorMap{E}(undef, V ← one(V))
-end
-
-# auxiliary function
-function _buildblockstructure(P::ProductSpace{S,N}, blocksectors) where {S<:IndexSpace,N}
-    I = sectortype(S)
-    F = fusiontreetype(I, N)
-    treeranges = SectorDict{I,FusionTreeDict{F,UnitRange{Int}}}()
-    blockdims = SectorDict{I,Int}()
-    for s in sectors(P)
-        for c in blocksectors
-            offset = get!(blockdims, c, 0)
-            treerangesc = get!(treeranges, c) do
-                return FusionTreeDict{F,UnitRange{Int}}()
-            end
-            for f in fusiontrees(s, c, map(isdual, P.spaces))
-                r = (offset + 1):(offset + dim(P, s))
-                push!(treerangesc, f => r)
-                offset = last(r)
-            end
-            blockdims[c] = offset
-        end
-    end
-    return treeranges, blockdims
 end
 
 @doc """

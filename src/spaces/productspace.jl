@@ -202,6 +202,28 @@ function blockdim(P::ProductSpace, c::Sector)
     return d
 end
 
+function blockstructure(P::ProductSpace{S,N}, blocksectors) where {S<:IndexSpace,N}
+    I = sectortype(S)
+    F = fusiontreetype(I, N)
+    treeranges = SectorDict{I,FusionTreeDict{F,UnitRange{Int}}}()
+    blockdims = SectorDict{I,Int}()
+    for s in sectors(P)
+        for c in blocksectors
+            offset = get!(blockdims, c, 0)
+            treerangesc = get!(treeranges, c) do
+                return FusionTreeDict{F,UnitRange{Int}}()
+            end
+            for f in fusiontrees(s, c, map(isdual, P.spaces))
+                r = (offset + 1):(offset + dim(P, s))
+                push!(treerangesc, f => r)
+                offset = last(r)
+            end
+            blockdims[c] = offset
+        end
+    end
+    return treeranges, blockdims
+end
+
 Base.:(==)(P1::ProductSpace, P2::ProductSpace) = (P1.spaces == P2.spaces)
 
 Base.hash(P::ProductSpace, h::UInt) = hash(P.spaces, h)

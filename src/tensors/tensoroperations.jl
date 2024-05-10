@@ -17,12 +17,12 @@ function TO.tensoralloc(::Type{TT}, structure::TensorMapSpace{S,N₁,N₂}, iste
                         backend::Backend...) where {E,S,N₁,N₂,
                                                     TT<:AbstractTensorMap{E,S,N₁,N₂}}
     blocksectoriterator = blocksectors(structure)
-    rowr, rowdims = _buildblockstructure(codomain(structure), blocksectoriterator)
-    colr, coldims = _buildblockstructure(domain(structure), blocksectoriterator)
+    _, rowdims = blockstructure(codomain(structure), blocksectoriterator)
+    _, coldims = blockstructure(domain(structure), blocksectoriterator)
     A = storagetype(TT)
     blockallocator(c) = TO.tensoralloc(A, (rowdims[c], coldims[c]), false, backend...)
     data = SectorDict(c => blockallocator(c) for c in blocksectoriterator)
-    return TT(data, codomain(structure), domain(structure), rowr, colr)
+    return TT(data, codomain(structure), domain(structure))
 end
 
 function TO.tensorfree!(t::AbstractTensorMap, backend::Backend...)

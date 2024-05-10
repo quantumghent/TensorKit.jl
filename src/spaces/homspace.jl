@@ -115,3 +115,18 @@ function dim(W::HomSpace)
     end
     return d
 end
+
+"""
+    blockstructure(W::HomSpace) -> (rowr, rowdims), (colr, coldims)
+
+Return the data that specifies the block structure of the `HomSpace`. This is comprised of
+the data needed to locate a given tensorblock within a matrix block, or in other words, how
+to go from storing a tensor as `::Sector => ::Matrix` to storing it as
+`::NTuple{FusionTree,2} => ::Array`.
+"""
+function blockstructure(W::HomSpace)
+    blocksectoriterator = blocksectors(W)
+    rowr, rowdims = blockstructure(codomain(W), blocksectoriterator)
+    colr, coldims = blockstructure(domain(W), blocksectoriterator)
+    return (rowr, rowdims), (colr, coldims)
+end
