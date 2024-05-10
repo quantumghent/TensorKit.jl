@@ -6,14 +6,14 @@
 Specific subtype of [`AbstractTensorMap`](@ref) that is a lazy wrapper for representing the
 adjoint of an instance of [`TensorMap`](@ref).
 """
-struct AdjointTensorMap{E,S,N₁,N₂,I,A,F₁,F₂} <:
+struct AdjointTensorMap{E,S,N₁,N₂,I,A} <:
        AbstractTensorMap{E,S,N₁,N₂}
-    parent::TensorMap{E,S,N₂,N₁,I,A,F₂,F₁}
+    parent::TensorMap{E,S,N₂,N₁,I,A}
 end
 
 #! format: off
 const AdjointTrivialTensorMap{E,S,N₁,N₂,A<:DenseMatrix} =
-    AdjointTensorMap{E,S,N₁,N₂,Trivial,A,Nothing,Nothing}
+    AdjointTensorMap{E,S,N₁,N₂,Trivial,A}
 #! format: on
 
 # Constructor: construct from taking adjoint of a tensor
@@ -53,8 +53,9 @@ function Base.getindex(t::AdjointTensorMap{E,S,N₁,N₂,I},
         c == f₂.coupled || throw(SectorMismatch())
         hassector(codomain(t), f₁.uncoupled) && hassector(domain(t), f₂.uncoupled)
     end
-    return sreshape((StridedView(t.parent.data[c])[t.parent.rowr[c][f₂],
-                                                   t.parent.colr[c][f₁]])',
+    (rowr, _), (colr, _) = blockstructure(space(t.parent))
+    return sreshape((StridedView(t.parent.data[c])[rowr[c][f₂],
+                                                   colr[c][f₁]])',
                     (dims(codomain(t), f₁.uncoupled)..., dims(domain(t), f₂.uncoupled)...))
 end
 @propagate_inbounds function Base.setindex!(t::AdjointTensorMap{E,S,N₁,N₂,I}, v,
