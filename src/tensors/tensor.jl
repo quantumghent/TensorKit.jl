@@ -88,7 +88,7 @@ const TrivialTensor{E,S,N,A} = TrivialTensorMap{E,S,N,0,A}
 Return the fully specified type of a tensor map with elementary space `S`, `N₁` output
 spaces and `N₂` input spaces, either with scalar type `T` or with storage type `T`.
 """
-function tensormaptype(::Type{S}, N₁::Int, N₂::Int, ::Type{T}) where {S,T}
+function tensormaptype(::Type{S}, N₁::Int, N₂::Int, ::Type{T}) where {S,T<:MatOrNumber}
     I = sectortype(S)
     if T <: DenseMatrix
         M = T
@@ -449,8 +449,7 @@ Base.copy(t::TensorMap) = typeof(t)(deepcopy(t.data), t.codom, t.dom, t.rowr, t.
 
 # specializations when data can be re-used
 function Base.similar(t::TensorMap, ::Type{TorA},
-                      P::TensorMapSpace{S}) where {TorA<:Union{Number,
-                                                               DenseMatrix{<:Number}},S}
+                      P::TensorMapSpace{S}) where {TorA<:MatOrNumber,S}
     N₁ = length(codomain(P))
     N₂ = length(domain(P))
     I = sectortype(S)

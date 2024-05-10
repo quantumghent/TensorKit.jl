@@ -21,7 +21,7 @@ Base.adjoint(t::TensorMap) = AdjointTensorMap(t)
 Base.adjoint(t::AdjointTensorMap) = t.parent
 
 function Base.similar(t::AdjointTensorMap, ::Type{TorA},
-                      P::TensorMapSpace) where {TorA<:Union{DenseMatrix{<:Number},Number}}
+                      P::TensorMapSpace) where {TorA<:MatOrNumber}
     return similar(t', TorA, P)
 end
 

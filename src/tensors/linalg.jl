@@ -52,8 +52,6 @@ function one!(t::AbstractTensorMap)
     return t
 end
 
-const MatOrNumber = Union{DenseMatrix{<:Number},Number}
-
 """
     id([T::Type=Float64,] V::TensorSpace) -> TensorMap
 
@@ -146,7 +144,7 @@ for morphism in (:isomorphism, :unitary, :isometry)
         $morphism(V::TensorMapSpace) = $morphism(Float64, V)
         $morphism(codomain::TensorSpace, domain::TensorSpace) = $morphism(codomain ← domain)
         function $morphism(::Type{T}, codomain::TensorSpace,
-                           domain::TensorSpace) where {T<:Union{Number,DenseMatrix}}
+                           domain::TensorSpace) where {T<:MatOrNumber}
             return $morphism(T, codomain ← domain)
         end
         $morphism(t::AbstractTensorMap) = $morphism(storagetype(t), space(t))

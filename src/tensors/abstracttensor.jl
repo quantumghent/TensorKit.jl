@@ -254,8 +254,7 @@ Base.similar(t::AbstractTensorMap) = similar(t, storagetype(t), space(t))
 
 # generic implementation for AbstractTensorMap -> returns `TensorMap`
 function Base.similar(::AbstractTensorMap, ::Type{TorA},
-                      P::TensorMapSpace{S}) where {TorA<:Union{Number,
-                                                               DenseMatrix{<:Number}},S}
+                      P::TensorMapSpace{S}) where {TorA<:MatOrNumber,S}
     N₁ = length(codomain(P))
     N₂ = length(domain(P))
     TT = tensormaptype(S, N₁, N₂, TorA)
