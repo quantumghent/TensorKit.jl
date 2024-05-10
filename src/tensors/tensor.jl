@@ -27,9 +27,9 @@ struct TensorMap{E,S<:IndexSpace,N₁,N₂,I<:Sector,
                                       dom::TensorSpace{S}) where
              {E,S<:IndexSpace,N₁,N₂,I<:Sector,A<:SectorDict{I,<:DenseMatrix{E}}}
         I === sectortype(S) || throw(SectorMismatch())
-        (rowr, rowdims), (colr, coldims) = blockstructure(codom ← dom)
+        (_, rowdims), (_, coldims) = blockstructure(codom ← dom)
         data = SectorDict(c => valtype(A)(undef, rowdims[c], coldims[c])
-                          for c in blocksectoriterator)
+                          for c in keys(rowdims))
         return TensorMap{E,S,N₁,N₂,I,A}(data, codom, dom)
     end
 
@@ -67,7 +67,7 @@ const Tensor{E,S,N,I,A} = TensorMap{E,S,N,0,I,A}
 A special case of [`TensorMap`](@ref) for representing tensor maps with trivial symmetry,
 i.e., whose `sectortype` is `Trivial`.
 """
-const TrivialTensorMap{E,S,N₁,N₂,A<:DenseMatrix} = TensorMap{E,S,N₁,N₂,Trivial,A}
+const TrivialTensorMap{E,S<:ElementarySpace,N₁,N₂,A<:DenseMatrix} = TensorMap{E,S,N₁,N₂,Trivial,A}
 
 """
     TrivialTensor{E,S,N,A} = TrivialTensorMap{E,S,N,0,A}
@@ -364,9 +364,8 @@ function TensorMap(data::DenseArray, V::TensorMapSpace{S,N₁,N₂};
     end
     if sectortype(S) === Trivial
         data2 = reshape(data, (d1, d2))
-        A = typeof(data2)
-        E = scalartype(A)
-        return TensorMap{E,S,N₁,N₂,Trivial,A,Nothing,Nothing}(data2, codom, dom)
+        TT = tensormaptype(S, N₁, N₂, typeof(data2))
+        return TT(data2, codom, dom)
     else
         t = zeros(eltype(data), codom, dom)
         ta = convert(Array, t)
