@@ -224,7 +224,8 @@ Return the dimensions of the block of a tensor corresponding to a coupled sector
     fusiontrees(t::AbstractTensorMap)
 
 Return an iterator over all splitting - fusion tree pairs of a tensor.
-""" fusiontrees(::AbstractTensorMap)
+"""
+fusiontrees(t::AbstractTensorMap) = fusiontrees(space(t))
 
 # Similar
 #---------

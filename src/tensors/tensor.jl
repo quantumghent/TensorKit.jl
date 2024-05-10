@@ -542,7 +542,6 @@ end
 blocks(t::TensorMap) = t.data
 
 fusiontrees(t::TrivialTensorMap) = ((nothing, nothing),)
-fusiontrees(t::TensorMap) = TensorKeyIterator(t.rowr, t.colr)
 
 """
     Base.getindex(t::TensorMap

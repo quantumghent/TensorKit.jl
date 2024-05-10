@@ -93,6 +93,11 @@ function blocksectors(W::HomSpace)
     end
 end
 
+function fusiontrees(W::HomSpace)
+    (rowr, _), (colr, _) = blockstructure(W)
+    return TensorKeyIterator(rowr, colr)
+end
+
 """
     hasblock(W::HomSpace, c::Sector)
 

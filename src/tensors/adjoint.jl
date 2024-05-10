@@ -45,7 +45,6 @@ block(t::AdjointTensorMap, s::Sector) = block(t.parent, s)'
 blocks(t::AdjointTensorMap) = (c => b' for (c, b) in blocks(t.parent))
 
 fusiontrees(::AdjointTrivialTensorMap) = ((nothing, nothing),)
-fusiontrees(t::AdjointTensorMap) = TensorKeyIterator(t.parent.colr, t.parent.rowr)
 
 function Base.getindex(t::AdjointTensorMap{E,S,N₁,N₂,I},
                        f₁::FusionTree{I,N₁}, f₂::FusionTree{I,N₂}) where {E,S,N₁,N₂,I}

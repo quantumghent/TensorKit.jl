@@ -53,40 +53,6 @@ storagetype(::Type{BraidingTensor{E,S}}) where {E,S} = Matrix{E}
 blocksectors(b::BraidingTensor) = blocksectors(b.V1 ⊗ b.V2)
 hasblock(b::BraidingTensor, s::Sector) = s ∈ blocksectors(b)
 
-function fusiontrees(b::BraidingTensor)
-    codom = codomain(b)
-    dom = domain(b)
-    I = sectortype(b)
-    F = fusiontreetype(I, 2)
-    rowr = SectorDict{I,FusionTreeDict{F,UnitRange{Int}}}()
-    colr = SectorDict{I,FusionTreeDict{F,UnitRange{Int}}}()
-    for c in blocksectors(codom)
-        rowrc = FusionTreeDict{F,UnitRange{Int}}()
-        colrc = FusionTreeDict{F,UnitRange{Int}}()
-        offset1 = 0
-        for s1 in sectors(codom)
-            for f₁ in fusiontrees(s1, c, map(isdual, codom.spaces))
-                r = (offset1 + 1):(offset1 + dim(codom, s1))
-                push!(rowrc, f₁ => r)
-                offset1 = last(r)
-            end
-        end
-        dim1 = offset1
-        offset2 = 0
-        for s2 in sectors(dom)
-            for f₂ in fusiontrees(s2, c, map(isdual, dom.spaces))
-                r = (offset2 + 1):(offset2 + dim(dom, s2))
-                push!(colrc, f₂ => r)
-                offset2 = last(r)
-            end
-        end
-        dim2 = offset2
-        push!(rowr, c => rowrc)
-        push!(colr, c => colrc)
-    end
-    return TensorKeyIterator(rowr, colr)
-end
-
 function Base.getindex(b::BraidingTensor)
     sectortype(b) === Trivial || throw(SectorMismatch())
     (V1, V2) = domain(b)
