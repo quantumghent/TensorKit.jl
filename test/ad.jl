@@ -118,8 +118,8 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
 @testset "Automatic Differentiation with spacetype $(TensorKit.type_repr(eltype(V)))" verbose = true for V in
                                                                                                          Vlist
     @testset "Basic Linear Algebra with scalartype $T" for T in (Float64, ComplexF64)
-        A = TensorMap(randn, T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
-        B = TensorMap(randn, T, space(A))
+        A = randn(T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
+        B = randn(T, space(A))
 
         test_rrule(+, A, B)
         test_rrule(-, A)
@@ -129,23 +129,23 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
         test_rrule(*, α, A)
         test_rrule(*, A, α)
 
-        C = TensorMap(randn, T, domain(A), codomain(A))
+        C = randn(T, domain(A), codomain(A))
         test_rrule(*, A, C)
 
         test_rrule(permute, A, ((1, 3, 2), (5, 4)))
 
-        D = TensorMap(randn, T, V[1] ⊗ V[2] ← V[3])
-        E = TensorMap(randn, T, V[4] ← V[5])
+        D = randn(T, V[1] ⊗ V[2] ← V[3])
+        E = randn(T, V[4] ← V[5])
         test_rrule(⊗, D, E)
     end
 
     @testset "Linear Algebra part II with scalartype $T" for T in (Float64, ComplexF64)
         for i in 1:3
-            E = TensorMap(randn, T, ⊗(V[1:i]...) ← ⊗(V[1:i]...))
+            E = randn(T, ⊗(V[1:i]...) ← ⊗(V[1:i]...))
             test_rrule(LinearAlgebra.tr, E)
         end
 
-        A = TensorMap(randn, T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
+        A = randn(T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
         test_rrule(LinearAlgebra.adjoint, A)
         test_rrule(LinearAlgebra.norm, A, 2)
     end
@@ -155,7 +155,7 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
         rtol = precision(T)
 
         @testset "tensortrace!" begin
-            A = TensorMap(randn, T, V[1] ⊗ V[2] ← V[3] ⊗ V[1] ⊗ V[5])
+            A = randn(T, V[1] ⊗ V[2] ← V[3] ⊗ V[1] ⊗ V[5])
             pC = ((3, 5), (2,))
             pA = ((1,), (4,))
             α = randn(T)
@@ -170,7 +170,7 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
 
         @testset "tensoradd!" begin
             p = ((1, 3, 2), (5, 4))
-            A = TensorMap(randn, T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
+            A = randn(T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
             C = randn!(TensorOperations.tensoralloc_add(T, p, A, :N, false))
             α = randn(T)
             β = randn(T)
@@ -181,8 +181,8 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
         end
 
         @testset "tensorcontract!" begin
-            A = TensorMap(randn, T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
-            B = TensorMap(randn, T, V[3] ⊗ V[1]' ← V[2])
+            A = randn(T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
+            B = randn(T, V[3] ⊗ V[1]' ← V[2])
             pC = ((3, 2), (4, 1))
             pA = ((2, 4, 5), (1, 3))
             pB = ((2, 1), (3,))
@@ -193,12 +193,12 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
                                                              B, pB, :N, false))
             test_rrule(tensorcontract!, C, pC, A, pA, :N, B, pB, :N, α, β; atol, rtol)
 
-            A2 = TensorMap(randn, T, V[1]' ⊗ V[2]' ← V[3]' ⊗ V[4]' ⊗ V[5]')
+            A2 = randn(T, V[1]' ⊗ V[2]' ← V[3]' ⊗ V[4]' ⊗ V[5]')
             C = randn!(TensorOperations.tensoralloc_contract(T, pC, A2, pA, :C,
                                                              B, pB, :N, false))
             test_rrule(tensorcontract!, C, pC, A2, pA, :C, B, pB, :N, α, β; atol, rtol)
 
-            B2 = TensorMap(randn, T, V[3]' ⊗ V[1] ← V[2]')
+            B2 = randn(T, V[3]' ⊗ V[1] ← V[2]')
             C = randn!(TensorOperations.tensoralloc_contract(T, pC, A, pA, :N,
                                                              B2, pB, :C, false))
             test_rrule(tensorcontract!, C, pC, A, pA, :N, B2, pB, :C, α, β; atol, rtol)
@@ -209,7 +209,7 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
         end
 
         @testset "tensorscalar" begin
-            A = Tensor(randn, T, ProductSpace{typeof(V[1]),0}())
+            A = randn(T, ProductSpace{typeof(V[1]),0}())
             test_rrule(tensorscalar, A)
         end
     end
