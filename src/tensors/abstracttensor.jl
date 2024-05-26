@@ -231,6 +231,20 @@ Return an iterator over all splitting - fusion tree pairs of a tensor.
 # The implementation is written for similar(t, TorA, V::TensorMapSpace) -> TensorMap
 # and all other methods are just filling in default arguments
 # 4 arguments
+@doc """
+    similar(t::AbstractTensorMap, [AorT=storagetype(t)], [V=space(t)])
+    similar(t::AbstractTensorMap, [AorT=storagetype(t)], codomain, domain)
+
+Creates an uninitialized mutable tensor with the given scalar or storagetype `AorT` and
+structure `V` or `codomain ← domain`, based on the source tensormap. The second and third
+arguments are both optional, defaulting to the given tensor's `storagetype` and `space`.
+The structure may be specified either as a single `HomSpace` argument or as `codomain` and
+`domain`.
+
+By default, this will result in `TensorMap{T}(undef, V)` when custom objects do not
+specialize this method.
+""" Base.similar(::AbstractTensorMap, args...)
+
 function Base.similar(t::AbstractTensorMap, ::Type{T}, codomain::TensorSpace{S},
                       domain::TensorSpace{S}) where {T,S}
     return similar(t, T, codomain ← domain)
