@@ -130,7 +130,7 @@ See also [`isomorphism`](@ref) and [`unitary`](@ref).
 function isometry(::Type{A}, V::TensorMapSpace{S,N₁,N₂}) where {A<:MatOrNumber,S,N₁,N₂}
     InnerProductStyle(S) === EuclideanProduct() || throw_invalid_innerproduct(:isometry)
     domain(V) ≾ codomain(V) ||
-        throw(SpaceMismatch("codomain and domain are not isometric: $V"))
+        throw(SpaceMismatch("$V does not allow for an isometric inclusion"))
     t = tensormaptype(S, N₁, N₂, A)(undef, codomain(V), domain(V))
     for (_, b) in blocks(t)
         MatrixAlgebra.one!(b)
