@@ -211,10 +211,10 @@ end
 # ----------------
 # TODO: implement specialized methods
 
-function TO.tensoradd!(C::AbstractTensorMap, pC::Index2Tuple,
-                       A::BraidingTensor, conjA::Symbol, α::Number, β::Number,
-                       backend::Backend...)
-    return TO.tensoradd!(C, pC, TensorMap(A), conjA, α, β, backend...)
+function TO.tensoradd!(C::AbstractTensorMap,
+                       A::BraidingTensor, pA::Index2Tuple, conjA::Symbol,
+                       α::Number, β::Number, backend::Backend...)
+    return TO.tensoradd!(C, TensorMap(A), pA, conjA, α, β, backend...)
 end
 
 # Planar operations
@@ -273,7 +273,7 @@ function planarcontract!(C::AbstractTensorMap,
             end
         end
         for ((f₁′, f₂′), coeff) in newtrees
-            TO.tensoradd!(C[f₁′, f₂′], (reverse(cindB), oindB), B[f₁, f₂], :N, α * coeff,
+            TO.tensoradd!(C[f₁′, f₂′], B[f₁, f₂], (reverse(cindB), oindB), :N, α * coeff,
                           One(), backend...)
         end
     end
@@ -324,7 +324,7 @@ function planarcontract!(C::AbstractTensorMap,
             end
         end
         for ((f₁′, f₂′), coeff) in newtrees
-            TO.tensoradd!(C[f₁′, f₂′], (oindA, reverse(cindA)), A[f₁, f₂], :N, α * coeff,
+            TO.tensoradd!(C[f₁′, f₂′], A[f₁, f₂], (oindA, reverse(cindA)), :N, α * coeff,
                           One(), backend...)
         end
     end
@@ -333,9 +333,9 @@ end
 
 # ambiguity fix:
 function planarcontract!(C::AbstractTensorMap, A::BraidingTensor, pA::Index2Tuple,
-                         B::BraidingTensor, pB::Index2Tuple, pC::Index2Tuple,
+                         B::BraidingTensor, pB::Index2Tuple, pAB::Index2Tuple,
                          α::Number, β::Number, backend::Backend...)
-    return planarcontract!(C, TensorMap(A), pA, TensorMap(B), pB, pC, α, β, backend...)
+    return planarcontract!(C, TensorMap(A), pA, TensorMap(B), pB, pAB, α, β, backend...)
 end
 
 function planartrace!(C::AbstractTensorMap,

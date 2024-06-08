@@ -46,40 +46,41 @@ function _canonicalize(p::IndexTuple, t::AbstractTensorMap)
 end
 
 # tensoradd!
-function TO.tensoradd!(C::AbstractTensorMap, pC::Index2Tuple,
-                       A::AbstractTensorMap, conjA::Symbol,
+function TO.tensoradd!(C::AbstractTensorMap,
+                       A::AbstractTensorMap, pA::Index2Tuple, conjA::Symbol,
                        α::Number, β::Number, backend::Backend...)
     if conjA == :N
         A′ = A
-        pC′ = _canonicalize(pC, C)
+        pA′ = _canonicalize(pA, C)
     elseif conjA == :C
         A′ = adjoint(A)
-        pC′ = adjointtensorindices(A, _canonicalize(pC, C))
+        pA′ = adjointtensorindices(A, _canonicalize(pA, C))
     else
         throw(ArgumentError("unknown conjugation flag $conjA"))
     end
-    add_permute!(C, A′, pC′, α, β, backend...)
+    add_permute!(C, A′, pA′, α, β, backend...)
     return C
 end
 
-function TO.tensoradd_type(TC, ::Index2Tuple{N₁,N₂}, A::AbstractTensorMap,
+function TO.tensoradd_type(TC, A::AbstractTensorMap, ::Index2Tuple{N₁,N₂},
                            ::Symbol) where {N₁,N₂}
     M = similarstoragetype(A, TC)
     return tensormaptype(spacetype(A), N₁, N₂, M)
 end
 
-function TO.tensoradd_structure(pC::Index2Tuple{N₁,N₂},
-                                A::AbstractTensorMap, conjA::Symbol) where {N₁,N₂}
+function TO.tensoradd_structure(A::AbstractTensorMap, pA::Index2Tuple{N₁,N₂},
+                                conjA::Symbol) where {N₁,N₂}
     if conjA == :N
-        return permute(space(A), pC)
+        return permute(space(A), pA)
     else
-        return TO.tensoradd_structure(adjointtensorindices(A, pC), adjoint(A), :N)
+        return TO.tensoradd_structure(adjoint(A), adjointtensorindices(A, pA), :N)
     end
 end
 
 # tensortrace!
-function TO.tensortrace!(C::AbstractTensorMap, p::Index2Tuple,
-                         A::AbstractTensorMap, q::Index2Tuple, conjA::Symbol,
+function TO.tensortrace!(C::AbstractTensorMap,
+                         A::AbstractTensorMap, p::Index2Tuple, q::Index2Tuple,
+                         conjA::Symbol,
                          α::Number, β::Number, backend::Backend...)
     if conjA == :N
         A′ = A
@@ -92,17 +93,15 @@ function TO.tensortrace!(C::AbstractTensorMap, p::Index2Tuple,
     else
         throw(ArgumentError("unknown conjugation flag $conjA"))
     end
-    # TODO: novel syntax for tensortrace?
-    # tensortrace!(C, pC′, A′, qA′, α, β, backend...)
     trace_permute!(C, A′, p′, q′, α, β, backend...)
     return C
 end
 
 # tensorcontract!
-function TO.tensorcontract!(C::AbstractTensorMap, pAB::Index2Tuple,
+function TO.tensorcontract!(C::AbstractTensorMap,
                             A::AbstractTensorMap, pA::Index2Tuple, conjA::Symbol,
                             B::AbstractTensorMap, pB::Index2Tuple, conjB::Symbol,
-                            α::Number, β::Number, backend::Backend...)
+                            pAB::Index2Tuple, α::Number, β::Number, backend::Backend...)
     pAB′ = _canonicalize(pAB, C)
     if conjA == :N
         A′ = A
@@ -126,22 +125,22 @@ function TO.tensorcontract!(C::AbstractTensorMap, pAB::Index2Tuple,
     return C
 end
 
-function TO.tensorcontract_type(TC, ::Index2Tuple{N₁,N₂},
-                                A::AbstractTensorMap, pA, conjA,
-                                B::AbstractTensorMap, pB, conjB) where {N₁,N₂}
+function TO.tensorcontract_type(TC,
+                                A::AbstractTensorMap, ::Index2Tuple, ::Symbol,
+                                B::AbstractTensorMap, ::Index2Tuple, ::Symbol,
+                                ::Index2Tuple{N₁,N₂}) where {N₁,N₂}
     M = similarstoragetype(A, TC)
     M == similarstoragetype(B, TC) || throw(ArgumentError("incompatible storage types"))
     spacetype(A) == spacetype(B) || throw(SpaceMismatch("incompatible space types"))
     return tensormaptype(spacetype(A), N₁, N₂, M)
 end
 
-function TO.tensorcontract_structure(pC::Index2Tuple{N₁,N₂},
-                                     A::AbstractTensorMap, pA::Index2Tuple, conjA,
-                                     B::AbstractTensorMap, pB::Index2Tuple,
-                                     conjB) where {N₁,N₂}
-    sA = TO.tensoradd_structure(pA, A, conjA)
-    sB = TO.tensoradd_structure(pB, B, conjB)
-    return permute(compose(sA, sB), pC)
+function TO.tensorcontract_structure(A::AbstractTensorMap, pA::Index2Tuple, conjA::Symbol,
+                                     B::AbstractTensorMap, pB::Index2Tuple, conjB::Symbol,
+                                     pAB::Index2Tuple{N₁,N₂}) where {N₁,N₂}
+    sA = TO.tensoradd_structure(A, pA, conjA)
+    sB = TO.tensoradd_structure(B, pB, conjB)
+    return permute(compose(sA, sB), pAB)
 end
 
 function TO.checkcontractible(tA::AbstractTensorMap, iA::Int, conjA::Symbol,
@@ -195,7 +194,7 @@ function trace_permute!(tdst::AbstractTensorMap,
         cod = codomain(tsrc)
         dom = domain(tsrc)
         n = length(cod)
-        TO.tensortrace!(tdst[], (p₁, p₂), tsrc[], (q₁, q₂), :N, α, β)
+        TO.tensortrace!(tdst[], tsrc[], (p₁, p₂), (q₁, q₂), :N, α, β, backend...)
         # elseif FusionStyle(I) isa UniqueFusion
     else
         cod = codomain(tsrc)
@@ -218,7 +217,7 @@ function trace_permute!(tdst::AbstractTensorMap,
                 C = tdst[f₁′′, f₂′′]
                 A = tsrc[f₁, f₂]
                 α′ = α * coeff
-                TO.tensortrace!(C, (p₁, p₂), A, (q₁, q₂), :N, α′, One(), backend...)
+                TO.tensortrace!(C, A, (p₁, p₂), (q₁, q₂), :N, α′, One(), backend...)
             end
         end
     end
@@ -242,9 +241,9 @@ function contract!(C::AbstractTensorMap,
 
     # find optimal contraction scheme
     hsp = has_shared_permute
-    ipC = TupleTools.invperm((p₁..., p₂...))
-    oindAinC = TupleTools.getindices(ipC, ntuple(n -> n, N₁))
-    oindBinC = TupleTools.getindices(ipC, ntuple(n -> n + N₁, N₂))
+    ipAB = TupleTools.invperm((p₁..., p₂...))
+    oindAinC = TupleTools.getindices(ipAB, ntuple(n -> n, N₁))
+    oindBinC = TupleTools.getindices(ipAB, ntuple(n -> n + N₁, N₂))
 
     qA = TupleTools.sortperm(cindA)
     cindA′ = TupleTools.getindices(cindA, qA)
@@ -314,9 +313,9 @@ function _contract!(α, A::AbstractTensorMap, B::AbstractTensorMap,
             end
         end
     end
-    ipC = TupleTools.invperm((p₁..., p₂...))
-    oindAinC = TupleTools.getindices(ipC, ntuple(n -> n, N₁))
-    oindBinC = TupleTools.getindices(ipC, ntuple(n -> n + N₁, N₂))
+    ipAB = TupleTools.invperm((p₁..., p₂...))
+    oindAinC = TupleTools.getindices(ipAB, ntuple(n -> n, N₁))
+    oindBinC = TupleTools.getindices(ipAB, ntuple(n -> n + N₁, N₂))
     if has_shared_permute(C, (oindAinC, oindBinC))
         C′ = permute(C, (oindAinC, oindBinC))
         mul!(C′, A′, B′, α, β)

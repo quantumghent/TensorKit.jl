@@ -114,7 +114,7 @@ function ChainRulesCore.rrule(::typeof(⊗), A::AbstractTensorMap, B::AbstractTe
             dA = zerovector(A,
                             TensorOperations.promote_contract(scalartype(ΔC),
                                                               scalartype(B)))
-            dA = tensorcontract!(dA, ipA, ΔC, pΔC, :N, B, pB, :C)
+            dA = tensorcontract!(dA, ΔC, pΔC, :N, B, pB, :C, ipA)
             return projectA(dA)
         end
         dB_ = @thunk begin
@@ -123,7 +123,7 @@ function ChainRulesCore.rrule(::typeof(⊗), A::AbstractTensorMap, B::AbstractTe
             dB = zerovector(B,
                             TensorOperations.promote_contract(scalartype(ΔC),
                                                               scalartype(A)))
-            dB = tensorcontract!(dB, ipB, A, pA, :C, ΔC, pΔC, :N)
+            dB = tensorcontract!(dB, A, pA, :C, ΔC, pΔC, :N, ipB)
             return projectB(dB)
         end
         return NoTangent(), dA_, dB_
