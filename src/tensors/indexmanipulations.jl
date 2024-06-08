@@ -329,7 +329,7 @@ end
 
 # internal methods: no argument types
 function _add_trivial_kernel!(tdst, tsrc, p, fusiontreetransform, α, β, backend...)
-    TO.tensoradd!(tdst[], p, tsrc[], :N, α, β, backend...)
+    TO.tensoradd!(tdst[], tsrc[], p, :N, α, β, backend...)
     return nothing
 end
 
@@ -350,7 +350,7 @@ end
 
 function _add_abelian_block!(tdst, tsrc, p, fusiontreetransform, f₁, f₂, α, β, backend...)
     (f₁′, f₂′), coeff = first(fusiontreetransform(f₁, f₂))
-    @inbounds TO.tensoradd!(tdst[f₁′, f₂′], p, tsrc[f₁, f₂], :N, α * coeff, β, backend...)
+    @inbounds TO.tensoradd!(tdst[f₁′, f₂′], tsrc[f₁, f₂], p, :N, α * coeff, β, backend...)
     return nothing
 end
 
@@ -360,28 +360,30 @@ function _add_general_kernel!(tdst, tsrc, p, fusiontreetransform, α, β, backen
     elseif β != 1
         tdst = scale!(tdst, β)
     end
+    β′ = One()
     if Threads.nthreads() > 1
         Threads.@sync for s₁ in sectors(codomain(tsrc)), s₂ in sectors(domain(tsrc))
             Threads.@spawn _add_nonabelian_sector!(tdst, tsrc, p, fusiontreetransform, s₁,
-                                                   s₂, α, β, backend...)
+                                                   s₂, α, β′, backend...)
         end
     else
         for (f₁, f₂) in fusiontrees(tsrc)
             for ((f₁′, f₂′), coeff) in fusiontreetransform(f₁, f₂)
-                @inbounds TO.tensoradd!(tdst[f₁′, f₂′], p, tsrc[f₁, f₂], :N, α * coeff,
-                                        true, backend...)
+                @inbounds TO.tensoradd!(tdst[f₁′, f₂′], tsrc[f₁, f₂], :p, N, α * coeff,
+                                        β′, backend...)
             end
         end
     end
     return nothing
 end
 
+# TODO: β argument is weird here because it has to be 1
 function _add_nonabelian_sector!(tdst, tsrc, p, fusiontreetransform, s₁, s₂, α, β,
                                  backend...)
     for (f₁, f₂) in fusiontrees(tsrc)
         (f₁.uncoupled == s₁ && f₂.uncoupled == s₂) || continue
         for ((f₁′, f₂′), coeff) in fusiontreetransform(f₁, f₂)
-            @inbounds TO.tensoradd!(tdst[f₁′, f₂′], p, tsrc[f₁, f₂], :N, α * coeff, true,
+            @inbounds TO.tensoradd!(tdst[f₁′, f₂′], tsrc[f₁, f₂], p, :N, α * coeff, β,
                                     backend...)
         end
     end

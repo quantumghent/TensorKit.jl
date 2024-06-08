@@ -42,9 +42,10 @@ function planartrace!(C::AbstractTensorMap,
     elseif !isone(β)
         rmul!(C, β)
     end
+    β′ = One()
     for (f₁, f₂) in fusiontrees(A)
         for ((f₁′, f₂′), coeff) in planar_trace(f₁, f₂, p₁, p₂, q₁, q₂)
-            TO.tensortrace!(C[f₁′, f₂′], (p₁, p₂), A[f₁, f₂], (q₁, q₂), :N, α * coeff, true,
+            TO.tensortrace!(C[f₁′, f₂′], A[f₁, f₂], (p₁, p₂), (q₁, q₂), :N, α * coeff, β′,
                             backend...)
         end
     end
@@ -74,15 +75,15 @@ function planarcontract!(C::AbstractTensorMap,
     if oindA == codA && cindA == domA
         A′ = A
     else
-        A′ = TO.tensoralloc_add(scalartype(A), (oindA, cindA), A, :N, true)
-        add_transpose!(A′, A, (oindA, cindA), true, false, backend...)
+        A′ = TO.tensoralloc_add(scalartype(A), A, (oindA, cindA), :N, true)
+        add_transpose!(A′, A, (oindA, cindA), One(), Zero(), backend...)
     end
 
     if cindB == codB && oindB == domB
         B′ = B
     else
-        B′ = TensorOperations.tensoralloc_add(scalartype(B), (cindB, oindB), B, :N, true)
-        add_transpose!(B′, B, (cindB, oindB), true, false, backend...)
+        B′ = TensorOperations.tensoralloc_add(scalartype(B), B, (cindB, oindB), :N, true)
+        add_transpose!(B′, B, (cindB, oindB), One(), Zero(), backend...)
     end
     mul!(C, A′, B′, α, β)
     (oindA == codA && cindA == domA) || TO.tensorfree!(A′)
