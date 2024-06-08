@@ -1,3 +1,7 @@
+# TODO: remove this once TensorOperations v5 is released
+using Pkg: Pkg
+Pkg.add(; url="https://github.com/Jutho/TensorOperations.jl", rev="master")
+
 using Documenter
 using TensorKit
 

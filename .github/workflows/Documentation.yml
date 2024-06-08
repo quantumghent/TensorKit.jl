@@ -27,6 +27,8 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
+      - name: Install TensorOperations v5
+        run: julia --project=docs/ -e 'using Pkg; Pkg.add(; url="https://github.com/Jutho/TensorOperations.jl", rev="master");'
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
