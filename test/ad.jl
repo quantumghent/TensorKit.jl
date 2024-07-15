@@ -161,23 +161,23 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
             α = randn(T)
             β = randn(T)
 
-            C = randn!(TensorOperations.tensoralloc_add(T, A, p, :N, false))
-            test_rrule(tensortrace!, C, A, p, q, :N, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_add(T, A, p, false, Val(false)))
+            test_rrule(tensortrace!, C, A, p, q, false, α, β; atol, rtol)
 
-            C = randn!(TensorOperations.tensoralloc_add(T, A, p, :C, false))
-            test_rrule(tensortrace!, C, A, p, q, :C, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_add(T, A, p, true, Val(false)))
+            test_rrule(tensortrace!, C, A, p, q, true, α, β; atol, rtol)
         end
 
         @testset "tensoradd!" begin
             p = ((1, 3, 2), (5, 4))
             A = randn(T, V[1] ⊗ V[2] ← V[3] ⊗ V[4] ⊗ V[5])
-            C = randn!(TensorOperations.tensoralloc_add(T, A, p, :N, false))
+            C = randn!(TensorOperations.tensoralloc_add(T, A, p, false, Val(false)))
             α = randn(T)
             β = randn(T)
-            test_rrule(tensoradd!, C, A, p, :N, α, β; atol, rtol)
+            test_rrule(tensoradd!, C, A, p, false, α, β; atol, rtol)
 
-            C = randn!(TensorOperations.tensoralloc_add(T, A, p, :C, false))
-            test_rrule(tensoradd!, C, A, p, :C, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_add(T, A, p, true, Val(false)))
+            test_rrule(tensoradd!, C, A, p, true, α, β; atol, rtol)
         end
 
         @testset "tensorcontract!" begin
@@ -189,23 +189,27 @@ Vlist = ((ℂ^2, (ℂ^3)', ℂ^3, ℂ^2, (ℂ^2)'),
             α = randn(T)
             β = randn(T)
 
-            C = randn!(TensorOperations.tensoralloc_contract(T, A, pA, :N,
-                                                             B, pB, :N, pAB, false))
-            test_rrule(tensorcontract!, C, A, pA, :N, B, pB, :N, pAB, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_contract(T, A, pA, false,
+                                                             B, pB, false, pAB, Val(false)))
+            test_rrule(tensorcontract!, C, A, pA, false, B, pB, false, pAB, α, β; atol,
+                       rtol)
 
             A2 = randn(T, V[1]' ⊗ V[2]' ← V[3]' ⊗ V[4]' ⊗ V[5]')
-            C = randn!(TensorOperations.tensoralloc_contract(T, A2, pA, :C,
-                                                             B, pB, :N, pAB, false))
-            test_rrule(tensorcontract!, C, A2, pA, :C, B, pB, :N, pAB, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_contract(T, A2, pA, true,
+                                                             B, pB, false, pAB, Val(false)))
+            test_rrule(tensorcontract!, C, A2, pA, true, B, pB, false, pAB, α, β; atol,
+                       rtol)
 
             B2 = randn(T, V[3]' ⊗ V[1] ← V[2]')
-            C = randn!(TensorOperations.tensoralloc_contract(T, A, pA, :N,
-                                                             B2, pB, :C, pAB, false))
-            test_rrule(tensorcontract!, C, A, pA, :N, B2, pB, :C, pAB, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_contract(T, A, pA, false,
+                                                             B2, pB, true, pAB, Val(false)))
+            test_rrule(tensorcontract!, C, A, pA, false, B2, pB, true, pAB, α, β; atol,
+                       rtol)
 
-            C = randn!(TensorOperations.tensoralloc_contract(T, A2, pA, :C,
-                                                             B2, pB, :C, pAB, false))
-            test_rrule(tensorcontract!, C, A2, pA, :C, B2, pB, :C, pAB, α, β; atol, rtol)
+            C = randn!(TensorOperations.tensoralloc_contract(T, A2, pA, true,
+                                                             B2, pB, true, pAB, Val(false)))
+            test_rrule(tensorcontract!, C, A2, pA, true, B2, pB, true, pAB, α, β; atol,
+                       rtol)
         end
 
         @testset "tensorscalar" begin

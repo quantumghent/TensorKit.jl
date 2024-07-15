@@ -196,8 +196,8 @@ function Base.convert(A::Type{<:AbstractArray}, f::FusionTree{I,N}) where {I,N}
     d1 = size(C1)
     X = similar(C1, (d1[1], d1[2], Base.tail(dtail)...))
     trivialtuple = ntuple(identity, Val(N))
-    return TO.tensorcontract!(X, C1, ((1, 2), (3,)), :N,
-                              Ctail, ((1,), Base.tail(trivialtuple)), :N,
+    return TO.tensorcontract!(X, C1, ((1, 2), (3,)), false,
+                              Ctail, ((1,), Base.tail(trivialtuple)), false,
                               ((trivialtuple..., N + 1), ()), One(), Zero())
 end
 
